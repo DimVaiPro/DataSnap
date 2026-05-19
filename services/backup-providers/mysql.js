@@ -1,6 +1,8 @@
 import mysql from 'mysql2/promise';
 import log from '../../lib/logger.js';
 
+const INSERT_BATCH_SIZE = 5000;
+
 function escapeMysqlString(str) {
     return String(str)
         .replace(/\\/g, '\\\\')
@@ -121,9 +123,8 @@ export async function createDump(job) {
             const columns = fields.map(f => `\`${f.name}\``).join(', ');
             lines.push(`-- Data for table: ${table}`);
 
-            const batchSize = 500;
-            for (let i = 0; i < rows.length; i += batchSize) {
-                const batch = rows.slice(i, i + batchSize);
+            for (let i = 0; i < rows.length; i += INSERT_BATCH_SIZE) {
+                const batch = rows.slice(i, i + INSERT_BATCH_SIZE);
                 const values = batch.map(row =>
                     `(${fields.map(f => mysqlValue(row[f.name])).join(', ')})`
                 ).join(',\n');

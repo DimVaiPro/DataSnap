@@ -68,7 +68,10 @@
                             {{/if}}
                         </td>
                         <td class="actions-col">
-                            <a href="/databases/{{this.id}}/storage" class="btn btn-sm btn-outline-secondary" title="Backup αρχεία">
+                            <button class="btn btn-sm btn-outline-success" data-backup-id="{{this.id}}" title="Λήψη backup τώρα">
+                                ▶️
+                            </button>
+                            <a href="/databases/{{this.id}}/storage" class="btn btn-sm btn-outline-secondary ms-1" title="Backup αρχεία">
                                 📁
                             </a>
                             <a href="/databases/{{this.id}}" class="btn btn-sm btn-outline-primary ms-1" title="Επεξεργασία">
@@ -94,5 +97,43 @@
 <script type="module">
     document.addEventListener('DOMContentLoaded', () => {
         new DimTable('jobs-table', { pageSize: 25 });
+
+        // Εμφάνιση alert πάνω από τον πίνακα
+        function showAlert(type, message) {
+            const container = document.querySelector('main');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type} alert-dismissible fade show`;
+            alert.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+            container.prepend(alert);
+        }
+
+        // Χειρισμός κουμπιών on-demand backup
+        document.getElementById('jobs-table').addEventListener('click', async (e) => {
+            const btn = e.target.closest('[data-backup-id]');
+            if (!btn) return;
+
+            const id = btn.dataset.backupId;
+            const originalContent = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '⏳';
+
+            try {
+                const response = await fetch(`/databases/${id}/backup/run`, { method: 'POST' });
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert('success', result.message);
+                    location.reload();
+                } else {
+                    showAlert('danger', result.message);
+                    btn.disabled = false;
+                    btn.innerHTML = originalContent;
+                }
+            } catch {
+                showAlert('danger', 'Σφάλμα επικοινωνίας με τον server.');
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
+            }
+        });
     });
 </script>

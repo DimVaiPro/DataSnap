@@ -10,10 +10,10 @@ const providers = {
 };
 
 // Δημιουργεί timestamp-based filename για backup
-function generateBackupFileName() {
+function generateBackupFileName(dbName) {
     const now = new Date();
     const pad = n => String(n).padStart(2, '0');
-    return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}.sql`;
+    return `${dbName}_${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}.sql`;
 }
 
 /**
@@ -55,7 +55,7 @@ export const runBackupForJob = async (job) => {
 
     // Αποθήκευση αρχείου
     try {
-        const fileName = generateBackupFileName();
+        const fileName = generateBackupFileName(job.name);
         await Storage.job.save(job.name, fileName, dumpContent);
 
         const now = new Date();

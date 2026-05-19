@@ -1,6 +1,8 @@
 import { Client } from 'pg';
 import log from '../../lib/logger.js';
 
+const INSERT_BATCH_SIZE = 5000;
+
 // PostgreSQL OIDs για αριθμητικούς τύπους
 const NUMERIC_OIDS = new Set([20, 21, 23, 26, 700, 701, 1700]);
 const BOOLEAN_OID = 16;
@@ -177,9 +179,8 @@ export async function createDump(job) {
             const columns = dataResult.fields.map(f => `"${f.name}"`).join(', ');
             lines.push(`-- Data for table: public.${table}`);
 
-            const batchSize = 500;
-            for (let i = 0; i < dataResult.rows.length; i += batchSize) {
-                const batch = dataResult.rows.slice(i, i + batchSize);
+            for (let i = 0; i < dataResult.rows.length; i += INSERT_BATCH_SIZE) {
+                const batch = dataResult.rows.slice(i, i + INSERT_BATCH_SIZE);
                 const values = batch.map(row =>
                     `(${dataResult.fields.map(f => pgValue(row[f.name], f.dataTypeID)).join(', ')})`
                 ).join(',\n');

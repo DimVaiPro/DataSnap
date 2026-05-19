@@ -2,8 +2,23 @@ import { Router } from 'express';
 import Models from '../models/models.js';
 import Storage from '../lib/storage.js';
 import log from '../lib/logger.js';
+import { runBackupForJob } from '../services/backup-service.js';
 
 const router = Router();
+
+// POST /databases/:id/backup/run - on-demand εκτέλεση backup
+router.post('/databases/:id/backup/run', async (req, res) => {
+    try {
+        const job = await Models.DatabaseJob.findByPk(req.params.id);
+        if (!job) return res.status(404).json({ success: false, message: 'Το job δεν βρέθηκε.' });
+
+        const result = await runBackupForJob(job);
+        res.json(result);
+    } catch (error) {
+        log.error(`Manual backup error: ${error}`);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
 
 // GET /databases/:id/storage - λίστα backup αρχείων
 router.get('/databases/:id/storage', async (req, res) => {

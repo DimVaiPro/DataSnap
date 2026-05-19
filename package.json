@@ -13,7 +13,8 @@
     "dev": "node --env-file=config/.env --watch server.js",
     "start": "node server.js",
     "start:local": "node --env-file=config/.env server.js",
-    "backup:all": "node --env-file=config/.env services/backup-all.js"
+    "backup:all": "node services/backup-all.js",
+    "backup:all:local": "node --env-file=config/.env services/backup-all.js"
   },
   "keywords": [],
   "author": "",
