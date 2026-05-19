@@ -32,7 +32,7 @@
 - MySQL: δικαιώματα σύνδεσης, `SELECT` στους πίνακες της βάσης και δυνατότητα ανάγνωσης του ορισμού πινάκων και views
 - PostgreSQL: δικαιώματα σύνδεσης, `SELECT` στους πίνακες της βάσης και δυνατότητα ανάγνωσης των metadata/schema πληροφοριών που απαιτούνται για το dump, συμπεριλαμβανομένων των view definitions
 
-Για PostgreSQL, δημιουργήστε έναν χρήστη:
+Για PostgreSQL, δημιουργήστε έναν read-only χρήστη:
 ```sql
 
 -- 1. Δημιουργία χρήστη
@@ -43,7 +43,7 @@ GRANT CONNECT ON DATABASE your_database TO username;
 GRANT pg_read_all_data TO username;
 ```
 
-Για MySQL, δημιουργήστε έναν χρήστη:
+Για MySQL, δημιουργήστε έναν read-only χρήστη:
 ```sql
 -- 1. Δημιουργία χρήστη
 CREATE USER 'username'@'%' IDENTIFIED BY 'password';

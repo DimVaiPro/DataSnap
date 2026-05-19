@@ -1,5 +1,6 @@
 import log from '../lib/logger.js';
 import Storage from '../lib/storage.js';
+import { decrypt } from '../lib/encryption.js';
 import Models from '../models/models.js';
 import * as postgresProvider from './backup-providers/postgres.js';
 import * as mysqlProvider from './backup-providers/mysql.js';
@@ -16,6 +17,15 @@ function generateBackupFileName(dbName) {
     return `${dbName}_${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}.sql`;
 }
 
+function buildProviderJob(job) {
+    const jobData = job.toJSON ? job.toJSON() : job;
+
+    return {
+        ...jobData,
+        password: decrypt(jobData.password),
+    };
+}
+
 /**
  * Εκτελεί backup για ένα DatabaseJob.
  * Ελέγχει πρώτα τα δικαιώματα SELECT και μετά παράγει και αποθηκεύει το dump.
@@ -23,9 +33,10 @@ function generateBackupFileName(dbName) {
  * @returns {{ success: boolean, fileName?: string, message?: string }}
  */
 export const runBackupForJob = async (job) => {
-    const provider = providers[job.dialect];
+    const providerJob = buildProviderJob(job);
+    const provider = providers[providerJob.dialect];
     if (!provider) {
-        const message = `Άγνωστος τύπος βάσης: ${job.dialect}`;
+        const message = `Άγνωστος τύπος βάσης: ${providerJob.dialect}`;
         log.error(`Job "${job.name}": ${message}`);
         return { success: false, message };
     }
@@ -33,7 +44,7 @@ export const runBackupForJob = async (job) => {
     log.info(`Εκκίνηση backup job "${job.name}" (${job.dialect})...`);
 
     // Έλεγχος πρόσβασης πριν από το dump
-    const accessCheck = await provider.checkReadAccess(job);
+    const accessCheck = await provider.checkReadAccess(providerJob);
     if (!accessCheck.success) {
         const typeLabel = { connectivity: 'Σφάλμα συνδεσιμότητας', authentication: 'Σφάλμα πιστοποίησης', permissions: 'Σφάλμα δικαιωμάτων' }[accessCheck.errorType] ?? 'Σφάλμα';
         const message = `${typeLabel}: ${accessCheck.message}`;
@@ -45,7 +56,7 @@ export const runBackupForJob = async (job) => {
     // Δημιουργία dump
     let dumpContent;
     try {
-        dumpContent = await provider.createDump(job);
+        dumpContent = await provider.createDump(providerJob);
     } catch (error) {
         const message = `Σφάλμα δημιουργίας dump: ${error.message}`;
         log.error(`Job "${job.name}": ${message}`);

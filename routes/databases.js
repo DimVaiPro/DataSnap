@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import Models from '../models/models.js';
 import validateDatabaseJob from '../services/database-job-validator.js';
+import { decrypt, encrypt } from '../lib/encryption.js';
 import log from '../lib/logger.js';
 
 const router = Router();
@@ -27,6 +28,13 @@ function parseFormData(body) {
     };
 }
 
+function buildPersistenceData(formData) {
+    return {
+        ...formData,
+        password: encrypt(formData.password),
+    };
+}
+
 // GET /dashboard
 router.get('/dashboard', async (req, res) => {
     try {
@@ -48,7 +56,9 @@ router.get('/databases/:id', async (req, res) => {
     try {
         const job = await Models.DatabaseJob.findByPk(req.params.id);
         if (!job) return res.status(404).render('single-db', { error: 'Το job δεν βρέθηκε.' });
-        res.render('single-db', { job: job.toJSON() });
+        const jobData = job.toJSON();
+        jobData.password = decrypt(jobData.password);
+        res.render('single-db', { job: jobData });
     } catch (error) {
         log.error(`Get job error: ${error}`);
         res.status(500).render('single-db', { error: 'Σφάλμα φόρτωσης.' });
@@ -70,7 +80,7 @@ router.post('/databases', async (req, res) => {
     }
 
     try {
-        await Models.DatabaseJob.create(formData);
+        await Models.DatabaseJob.create(buildPersistenceData(formData));
         res.redirect('/dashboard');
     } catch (error) {
         log.error(`Create job error: ${error}`);
@@ -97,7 +107,7 @@ router.post('/databases/:id', async (req, res) => {
     try {
         const job = await Models.DatabaseJob.findByPk(req.params.id);
         if (!job) return res.status(404).render('single-db', { error: 'Το job δεν βρέθηκε.' });
-        await job.update(formData);
+        await job.update(buildPersistenceData(formData));
         res.redirect('/dashboard');
     } catch (error) {
         log.error(`Update job error: ${error}`);
