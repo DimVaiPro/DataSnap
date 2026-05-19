@@ -1,0 +1,98 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="page-title mb-0">Backup Jobs</h2>
+    <a href="/databases/new" class="btn btn-primary">+ Νέο Job</a>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-toolbar px-3 pt-3 pb-2">
+            <div></div>
+            <input type="search" class="form-control form-control-sm search-input" placeholder="Αναζήτηση..."
+                   data-dimtable-search="jobs-table">
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover dimtable mb-0" id="jobs-table">
+                <thead>
+                    <tr>
+                        <th data-sortable class="col-id">#</th>
+                        <th data-sortable>Όνομα</th>
+                        <th data-sortable>Τύπος</th>
+                        <th data-sortable>Τελευταίο Επιτυχημένο Backup</th>
+                        <th data-sortable>Τελευταία Απόπειρα</th>
+                        <th data-sortable>Κατάσταση</th>
+                        <th>Ενέργειες</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each jobs}}
+                    <tr>
+                        <td class="text-muted">{{this.id}}</td>
+                        <td>
+                            <strong>{{this.name}}</strong>
+                            {{#if this.description}}
+                            <br><small class="text-muted">{{this.description}}</small>
+                            {{/if}}
+                        </td>
+                        <td>
+                            <span class="badge dialect-badge dialect-{{this.dialect}}">
+                                {{#if (eq this.dialect 'postgres')}}PostgreSQL{{else}}MySQL{{/if}}
+                            </span>
+                        </td>
+                        <td>
+                            {{#if this.lastBackupSucceededAt}}
+                                <span class="text-success">{{datetime this.lastBackupSucceededAt}}</span>
+                            {{else}}
+                                <span class="text-muted">—</span>
+                            {{/if}}
+                        </td>
+                        <td>
+                            {{#if this.lastBackupAt}}
+                                {{datetime this.lastBackupAt}}
+                            {{else}}
+                                <span class="text-muted">—</span>
+                            {{/if}}
+                        </td>
+                        <td>
+                            {{#if this.lastBackupStatus}}
+                                {{#if (eq this.lastBackupStatus 'success')}}
+                                    <span class="badge bg-success">Επιτυχία</span>
+                                {{else}}
+                                    <span class="badge bg-danger" title="{{this.lastBackupMessage}}">Αποτυχία</span>
+                                {{/if}}
+                            {{/if}}
+                            {{#if this.enabled}}
+                                <span class="badge bg-primary ms-1">Ενεργό</span>
+                            {{else}}
+                                <span class="badge bg-secondary ms-1">Ανενεργό</span>
+                            {{/if}}
+                        </td>
+                        <td class="actions-col">
+                            <a href="/databases/{{this.id}}/storage" class="btn btn-sm btn-outline-secondary" title="Backup αρχεία">
+                                📁
+                            </a>
+                            <a href="/databases/{{this.id}}" class="btn btn-sm btn-outline-primary ms-1" title="Επεξεργασία">
+                                ✏️
+                            </a>
+                        </td>
+                    </tr>
+                    {{else}}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-5">
+                            Δεν υπάρχουν backup jobs. <a href="/databases/new">Δημιουργήστε το πρώτο</a>.
+                        </td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="px-3 py-2" data-dimtable-pagination="jobs-table"></div>
+    </div>
+</div>
+
+<script type="module">
+    document.addEventListener('DOMContentLoaded', () => {
+        new DimTable('jobs-table', { pageSize: 25 });
+    });
+</script>

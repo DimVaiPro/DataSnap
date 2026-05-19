@@ -20,10 +20,6 @@ router.get('/login', (req, res) => {
         });
 });
 
-router.get('/login', (req, res) => {
-    res.render('login/login', { layout: 'basic' });
-});
-
 router.post('/login', validateCredentials, (req, res) => {
     if (req.user) {
         res.redirect('/dashboard');

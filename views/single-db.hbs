@@ -1,0 +1,101 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="page-title mb-0">
+        {{#if isNew}}Νέο Backup Job{{else}}Επεξεργασία: {{job.name}}{{/if}}
+    </h2>
+    <a href="/dashboard" class="btn btn-outline-secondary btn-sm">← Πίσω</a>
+</div>
+
+<div class="card">
+    <div class="card-body p-4">
+        {{#if error}}
+        <div class="alert alert-danger">{{error}}</div>
+        {{/if}}
+
+        <form method="POST" action="{{#if isNew}}/databases{{else}}/databases/{{job.id}}{{/if}}"
+              x-data="{
+                  dialect: '{{job.dialect}}',
+                  updatePort() {
+                      if (!this.$refs.port.value || this.$refs.port.dataset.userSet !== 'true') {
+                          this.$refs.port.value = this.dialect === 'mysql' ? 3306 : 5432;
+                      }
+                  }
+              }">
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label for="name" class="form-label">Όνομα Job <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="name" name="name"
+                           value="{{job.name}}"
+                           {{#if isNew}}{{else}}readonly{{/if}}
+                           required>
+                    <div class="form-text">Χρησιμοποιείται ως όνομα φακέλου στο storage. Δεν μπορεί να αλλάξει μετά τη δημιουργία.</div>
+                </div>
+
+                <div class="col-md-6">
+                    <label for="description" class="form-label">Περιγραφή</label>
+                    <input type="text" class="form-control" id="description" name="description"
+                           value="{{job.description}}" >
+                </div>
+
+                <div class="col-md-3">
+                    <label for="dialect" class="form-label">Τύπος Βάσης <span class="text-danger">*</span></label>
+                    <select class="form-select" id="dialect" name="dialect"
+                            x-model="dialect" @change="updatePort()">
+                        <option value="postgres" {{#if (eq job.dialect 'postgres')}}selected{{/if}}>PostgreSQL</option>
+                        <option value="mysql" {{#if (eq job.dialect 'mysql')}}selected{{/if}}>MySQL</option>
+                    </select>
+                </div>
+
+                <div class="col-md-6">
+                    <label for="host" class="form-label">Host <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="host" name="host"
+                           value="{{job.host}}" required>
+                </div>
+
+                <div class="col-md-3">
+                    <label for="port" class="form-label">Port <span class="text-danger">*</span></label>
+                    <input type="number" class="form-control" id="port" name="port"
+                           x-ref="port"
+                           @input="$el.dataset.userSet = 'true'"
+                           value="{{#if job.port}}{{job.port}}{{else}}5432{{/if}}"
+                           min="1" max="65535" required>
+                </div>
+
+                <div class="col-md-6">
+                    <label for="dbName" class="form-label">Όνομα Βάσης <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="dbName" name="dbName"
+                           value="{{job.dbName}}" required>
+                </div>
+
+                <div class="col-md-3">
+                    <label for="username" class="form-label">Username <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="username" name="username"
+                           value="{{job.username}}" autocomplete="off" required>
+                </div>
+
+                <div class="col-md-3">
+                    <label for="password" class="form-label">Password <span class="text-danger">*</span></label>
+                    <input type="password" class="form-control" id="password" name="password"
+                           value="{{job.password}}" autocomplete="new-password" required>
+                </div>
+
+                <div class="col-12">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="enabled" name="enabled"
+                               {{#if job.enabled}}checked{{/if}}>
+                        <label class="form-check-label" for="enabled">Ενεργό (θα συμπεριλαμβάνεται στο backup)</label>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="my-4">
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    {{#if isNew}}Δημιουργία{{else}}Αποθήκευση{{/if}}
+                </button>
+                <a href="/dashboard" class="btn btn-outline-secondary">Ακύρωση</a>
+            </div>
+        </form>
+    </div>
+</div>

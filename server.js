@@ -29,7 +29,7 @@ import { presentTime } from './lib/utils.js';
 import { validateUser } from './lib/auth.js';
 
 import { db, databaseConnectionTest } from './config/database.js';
-// import Models from './models/models.js';
+import Models from './models/models.js';
 import Storage from './lib/storage.js';
 
 
@@ -37,9 +37,9 @@ import Storage from './lib/storage.js';
 
 /////////////////        ΕΛΕΥΘΕΡΑ ROUTES      /////////////////
 
-server.get('/', (req, res) => {
-    res.send('Welcome to the DataSnap server!');
-});
+// server.get('/', (req, res) => {
+//     res.send('Welcome to the DataSnap server!');
+// });
 
 server.get(['/status', '/health'], async (req, res) => {
     let statusData = {
@@ -90,6 +90,13 @@ server.use(loginRouter);
 
 server.use(validateUser);
 
+import databasesRouter from './routes/databases.js';
+import backupsRouter from './routes/backups.js';
+server.use(databasesRouter);
+server.use(backupsRouter);
+
+server.get('/', (req, res) => res.redirect('/dashboard'));
+
 
 
 
@@ -99,7 +106,7 @@ async function startServer(){
     log.info('Node.js version: ' + process.version);
     await databaseConnectionTest(db);
     await Storage.check();
-    if (process.env.SYNCMODELS==='true') {await Models.syncModels()};
+    await Models.syncModels();
     let port = process.env.PORT??80;
     let listeningURL = process.env.LISTENINGURL??'http://localhost';
     server.listen(port, () => {

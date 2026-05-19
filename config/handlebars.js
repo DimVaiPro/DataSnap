@@ -35,6 +35,12 @@ const handlebarsConfig = {
         /* example {{join 'a' 'b' 'c'}} => a, b, c */
         join: (...items) => items.slice(0, -1).filter(Boolean).join(', '),
         euro: (price) => new Intl.NumberFormat('el-GR', {style: 'currency', currency: 'EUR'}).format(price),
+        formatBytes: (bytes) => {
+            if (!bytes) return '0 B';
+            const units = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(1024));
+            return `${(bytes / Math.pow(1024, i)).toFixed(i ? 1 : 0)} ${units[i]}`;
+        },
         time: (date) => {
             if (!date) return '';
             try {
@@ -98,20 +104,7 @@ const handlebarsConfig = {
                 return '';
             }
         },
-        /** example: {{label 'status' 'pending'}} => Σε εκκρεμότητα */
-        label: function(category, value) {
-            if (typeof labels[category] === 'function') {
-                return labels[category](value) ?? '';
-            }
-            return labels[category]?.[value] ?? '';
-        },
-        /** Επιστρέφει array [{value, name}] για οποιαδήποτε κατηγορία labels (εκτός από functions), χρήσιμο για {{#each}} στα views.
-         * example: {{#each (labelEntries 'leaveType')}} */
-        labelEntries: (category) => {
-            const map = labels[category];
-            if (!map || typeof map === 'function') return [];
-            return Object.entries(map).map(([value, name]) => ({ value, name }));
-        },
+
     }
 };
 
