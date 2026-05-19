@@ -1,7 +1,7 @@
 {
   "name": "datasnap",
   "version": "1.0.0",
-  "description": "",
+  "description": "A web application for managing database snapshots.",
   "main": "server.js",
   "directories": {
     "lib": "lib"
@@ -17,7 +17,7 @@
     "backup:all:local": "node --env-file=config/.env services/backup-all.js"
   },
   "keywords": [],
-  "author": "",
+  "author": "Dimitris Vainanidis",
   "license": "ISC",
   "type": "module",
   "dependencies": {
