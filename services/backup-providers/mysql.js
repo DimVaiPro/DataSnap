@@ -3,6 +3,12 @@ import log from '../../lib/logger.js';
 
 const INSERT_BATCH_SIZE = 5000;
 
+function normalizeMysqlViewDefinition(createViewStatement) {
+    return createViewStatement
+        .replace(/\s+DEFINER=`[^`]+`@`[^`]+`/i, '')
+        .replace(/^CREATE\s+/i, 'CREATE OR REPLACE ');
+}
+
 function escapeMysqlString(str) {
     return String(str)
         .replace(/\\/g, '\\\\')
@@ -103,8 +109,13 @@ export async function createDump(job) {
         lines.push('SET NAMES utf8mb4;');
         lines.push('');
 
-        const [tables] = await connection.execute('SHOW TABLES');
-        const tableNames = tables.map(r => Object.values(r)[0]);
+        const [databaseObjects] = await connection.execute('SHOW FULL TABLES');
+        const tableNames = databaseObjects
+            .filter(row => Object.values(row)[1] === 'BASE TABLE')
+            .map(row => Object.values(row)[0]);
+        const viewNames = databaseObjects
+            .filter(row => Object.values(row)[1] === 'VIEW')
+            .map(row => Object.values(row)[0]);
 
         for (const table of tableNames) {
             // DDL μέσω SHOW CREATE TABLE (ακριβώς όπως το mysqldump)
@@ -131,6 +142,16 @@ export async function createDump(job) {
                 lines.push(`INSERT INTO \`${table}\` (${columns}) VALUES`);
                 lines.push(values + ';');
             }
+            lines.push('');
+        }
+
+        // Views
+        for (const view of viewNames) {
+            const [createResult] = await connection.execute(`SHOW CREATE VIEW \`${view}\``);
+            const createView = normalizeMysqlViewDefinition(createResult[0]['Create View']);
+
+            lines.push(`-- View: ${view}`);
+            lines.push(createView + ';');
             lines.push('');
         }
 

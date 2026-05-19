@@ -123,6 +123,45 @@ export async function createDump(job) {
             `SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename`
         );
         const tables = tablesResult.rows.map(r => r.tablename);
+        const viewsResult = await client.query(`
+            SELECT viewname, definition
+            FROM pg_views
+            WHERE schemaname = 'public'
+            ORDER BY viewname
+        `);
+        const views = viewsResult.rows;
+        const sequencesResult = await client.query(`
+            SELECT
+                sequencename,
+                data_type,
+                start_value,
+                min_value,
+                max_value,
+                increment_by,
+                cycle,
+                cache_size,
+                last_value
+            FROM pg_sequences
+            WHERE schemaname = 'public'
+            ORDER BY sequencename
+        `);
+        const sequences = sequencesResult.rows;
+
+        // CREATE SEQUENCE πριν από τα tables, ώστε τα nextval defaults να δείχνουν σε υπάρχοντα objects
+        if (sequences.length) {
+            lines.push('-- Sequences');
+            for (const sequence of sequences) {
+                lines.push(`CREATE SEQUENCE IF NOT EXISTS public."${sequence.sequencename}"`);
+                lines.push(`    AS ${sequence.data_type}`);
+                lines.push(`    INCREMENT BY ${sequence.increment_by}`);
+                lines.push(`    MINVALUE ${sequence.min_value}`);
+                lines.push(`    MAXVALUE ${sequence.max_value}`);
+                lines.push(`    START WITH ${sequence.start_value}`);
+                lines.push(`    CACHE ${sequence.cache_size}`);
+                lines.push(sequence.cycle ? '    CYCLE;' : '    NO CYCLE;');
+                lines.push('');
+            }
+        }
 
         // CREATE TABLE για κάθε πίνακα
         for (const table of tables) {
@@ -190,16 +229,12 @@ export async function createDump(job) {
             lines.push('');
         }
 
-        // Sequences
-        const seqResult = await client.query(`
-            SELECT sequencename, last_value
-            FROM pg_sequences
-            WHERE schemaname = 'public' AND last_value IS NOT NULL
-        `);
-        if (seqResult.rows.length) {
-            lines.push('-- Sequences');
-            for (const seq of seqResult.rows) {
-                lines.push(`SELECT setval('public."${seq.sequencename}"', ${seq.last_value}, true);`);
+        // Sequence values
+        const sequencesWithValue = sequences.filter(sequence => sequence.last_value !== null);
+        if (sequencesWithValue.length) {
+            lines.push('-- Sequence values');
+            for (const sequence of sequencesWithValue) {
+                lines.push(`SELECT setval('public."${sequence.sequencename}"', ${sequence.last_value}, true);`);
             }
             lines.push('');
         }
@@ -283,6 +318,17 @@ export async function createDump(job) {
                 const cols = fk.columns.map(c => `"${c}"`).join(', ');
                 const foreignCols = fk.foreignColumns.map(c => `"${c}"`).join(', ');
                 lines.push(`ALTER TABLE IF EXISTS public."${table}" ADD CONSTRAINT "${name}" FOREIGN KEY (${cols}) REFERENCES public."${fk.foreignTable}" (${foreignCols});`);
+            }
+        }
+
+        // Views
+        if (views.length) {
+            lines.push('');
+            lines.push('-- Views');
+            for (const view of views) {
+                lines.push(`CREATE OR REPLACE VIEW public."${view.viewname}" AS`);
+                lines.push(view.definition + ';');
+                lines.push('');
             }
         }
 
