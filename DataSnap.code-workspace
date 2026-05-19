@@ -1,0 +1,19 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+    ],
+	"settings": {
+        "liveServer.settings.root": "/public/",
+		"liveServer.settings.port": 80
+	    ,
+		"search.exclude": {
+			"**/node_modules": true,
+			"**/functions/node_modules": true,
+			"**/package-lock.json": true,
+            "**/.git": true,
+            "**/adminator.js": true
+		}
+	}
+}

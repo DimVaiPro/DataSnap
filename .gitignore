@@ -1,0 +1,17 @@
+# Logs
+logs
+*.log
+.VSCodeCounter
+
+# node_modules
+node_modules
+
+# env
+.env
+.env.local
+
+# private
+private
+
+# local
+/storage
